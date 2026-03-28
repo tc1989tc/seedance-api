@@ -7,9 +7,12 @@ from setuptools import setup, find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-# Read requirements
-with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+# Inline dependencies
+requirements = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0", 
+    "tenacity>=8.2.0",
+]
 
 setup(
     name="seedance-sdk",
