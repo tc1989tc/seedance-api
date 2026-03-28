@@ -70,7 +70,7 @@ class TestSeedanceClient:
                 prompt="A cat playing piano",
                 model=Model.SEEDANCE_2_0,
                 duration=8,
-                resolution=Resolution.P1080P
+                resolution=Resolution.P1080
             )
             
             task = await client.generate_video(request)
@@ -116,7 +116,7 @@ class TestSeedanceClient:
         mock_response.json.return_value = {"error": "Invalid API key"}
         
         with patch.object(SeedanceClient, '_request_async') as mock_request:
-            mock_request.side_effect = AuthenticationError("Invalid API key", 401)
+            mock_request.side_effect = AuthenticationError("Invalid API key")
             
             client = SeedanceClient("sk-video-1234567890abcdef")
             
@@ -153,7 +153,7 @@ class TestSeedanceClient:
             
             assert task.id == "task_123"
             assert task.status == TaskStatus.COMPLETED
-            assert task.result.video_url == "https://cdn.example.com/video.mp4"
+            assert str(task.result.video_url) == "https://cdn.example.com/video.mp4"
     
     @pytest.mark.asyncio
     async def test_get_task_not_found(self):
@@ -328,7 +328,7 @@ class TestSeedanceClient:
         with patch.object(SeedanceClient, '_request_sync', return_value=mock_response):
             client = SeedanceClient("sk-video-1234567890abcdef")
             
-            task = client.generate_video_sync(prompt="test sync")
+            task = client.generate_video_sync(GenerationRequest(prompt="test sync"))
             
             assert task.id == "task_sync"
             assert task.status == TaskStatus.PENDING

@@ -227,7 +227,7 @@ class SeedanceClient:
         response = await self._request_async(
             "POST",
             "/generations",
-            json=request.dict(exclude_none=True)
+            json=request.model_dump(exclude_none=True)
         )
         
         data = response.json()
@@ -360,7 +360,7 @@ class SeedanceClient:
         response = self._request_sync(
             "POST",
             "/generations",
-            json=request.dict(exclude_none=True)
+            json=request.model_dump(exclude_none=True)
         )
         
         data = response.json()
@@ -406,14 +406,14 @@ class SeedanceClient:
             
             time.sleep(poll_interval)
     
-    def verify_webhook_signature(self, payload: str, signature: str) -> bool:
+    def verify_webhook_signature(self, payload: Union[str, bytes], signature: str) -> bool:
         """
         Verify webhook signature
         
         Args:
-            payload: Raw webhook payload string
+            payload: Raw webhook payload (string or bytes)
             signature: Signature from webhook header
-            
+        
         Returns:
             bool: True if signature is valid
             
@@ -423,9 +423,15 @@ class SeedanceClient:
         if not self.webhook_secret:
             raise WebhookSignatureError("Webhook secret not configured")
         
+        # Convert bytes to string if needed
+        if isinstance(payload, bytes):
+            payload_str = payload.decode('utf-8')
+        else:
+            payload_str = payload
+        
         expected_signature = hmac.new(
             self.webhook_secret.encode(),
-            payload.encode(),
+            payload_str.encode(),
             hashlib.sha256
         ).hexdigest()
         

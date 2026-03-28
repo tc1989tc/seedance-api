@@ -1,3 +1,34 @@
+Metadata-Version: 2.1
+Name: seedance-sdk
+Version: 1.0.0
+Summary: Python SDK for Seedance AI Video Generation API
+Home-page: https://github.com/tc1989tc/seedance-api
+Author: Seedance Team
+Author-email: support@vibegen.art
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/tc1989tc/seedance-api/issues
+Project-URL: Documentation, https://vibegen.art/docs
+Project-URL: Source Code, https://github.com/tc1989tc/seedance-api
+Keywords: ai video generation api seedance
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Multimedia :: Video
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Provides-Extra: webhook
+License-File: LICENSE
+
 # Seedance Python SDK
 
 [![PyPI version](https://badge.fury.io/py/seedance-sdk.svg)](https://badge.fury.io/py/seedance-sdk)
@@ -356,7 +387,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ```bash
 # Clone repository
 git clone https://github.com/tc1989tc/seedance-api.git
-cd seedance-api/sdk
+cd seedance-api/
 
 # Install development dependencies
 pip install -e ".[dev]"
@@ -404,3 +435,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 Made with ❤️ by the Seedance Team
+
+

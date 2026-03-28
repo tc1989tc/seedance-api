@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Union
 from enum import Enum
 
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
 class Model(str, Enum):
@@ -67,8 +67,9 @@ class GenerationRequest(BaseModel):
     generate_audio: bool = Field(default=False, description="Generate background audio")
     callback_url: Optional[HttpUrl] = Field(default=None, description="Webhook callback URL")
 
-    @validator('duration')
-    def validate_duration(cls, v, values):
+    @field_validator('duration')
+    @classmethod
+    def validate_duration(cls, v, info):
         """Validate duration based on model"""
         if v is None:
             return v
@@ -87,11 +88,12 @@ class GenerationRequest(BaseModel):
         
         return v
 
-    @validator('image_urls')
-    def validate_image_urls(cls, v, values):
+    @field_validator('image_urls')
+    @classmethod
+    def validate_image_urls(cls, v, info):
         """Validate image_urls for image-to-video models"""
         if v and len(v) > 0:
-            model = values.get('model', Model.SEEDANCE_2_0)
+            model = info.data.get('model', Model.SEEDANCE_2_0)
             if model == Model.SORA_2:
                 raise ValueError("Sora 2 does not support image-to-video")
         return v
@@ -165,5 +167,5 @@ class CreditsInfo(BaseModel):
 
 
 # Forward references for circular imports
-GenerationResponse.update_forward_refs()
-TaskListResponse.update_forward_refs()
+GenerationResponse.model_rebuild()
+TaskListResponse.model_rebuild()
