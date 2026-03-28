@@ -121,7 +121,7 @@ class TestSeedanceClient:
             client = SeedanceClient("sk-video-1234567890abcdef")
             
             with pytest.raises(AuthenticationError):
-                await client.generate_video(prompt="test")
+                await client.generate_video(GenerationRequest(prompt="test"))
     
     @pytest.mark.asyncio
     async def test_get_task_success(self):

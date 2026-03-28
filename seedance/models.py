@@ -74,7 +74,7 @@ class GenerationRequest(BaseModel):
         if v is None:
             return v
             
-        model = values.get('model', Model.SEEDANCE_2_0)
+        model = info.data.get('model', Model.SEEDANCE_2_0)
         
         if model == Model.SEEDANCE_2_0:
             if v not in [4, 8, 12]:
