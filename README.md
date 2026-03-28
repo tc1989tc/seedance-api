@@ -1,0 +1,406 @@
+# Seedance Python SDK
+
+[![PyPI version](https://badge.fury.io/py/seedance-sdk.svg)](https://badge.fury.io/py/seedance-sdk)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Official Python SDK for [Seedance AI Video Generation API](https://vibegen.art) - Generate cinematic videos from text or images with just a few lines of code.
+
+## ✨ Features
+
+- 🎬 **Multi-Model Support** - Seedance 2.0, Kling v2.6, Sora 2
+- ⚡ **Async & Sync** - Native async/await and synchronous APIs
+- 🔄 **Smart Polling** - Automatic retry and timeout handling
+- 🎯 **Type Safety** - Full type hints and Pydantic models
+- 🔔 **Webhook Support** - Built-in webhook verification and handling
+- 🛡️ **Error Handling** - Detailed exceptions for every scenario
+- 📊 **Progress Tracking** - Real-time progress callbacks
+- 💰 **Cost Estimation** - Built-in credit cost calculator
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+pip install seedance-sdk
+```
+
+### Basic Usage
+
+```python
+import seedance
+import asyncio
+
+async def generate_video():
+    # Initialize client
+    async with seedance.SeedanceClient("sk-video-xxxxx") as client:
+        # Generate video
+        task = await client.generate_video(
+            prompt="A cinematic aerial shot of mountains at sunrise",
+            duration=8,
+            resolution="1080p",
+            generate_audio=True
+        )
+        
+        # Wait for completion
+        result = await client.wait_for_completion(task.id)
+        print(f"Video ready: {result.result.video_url}")
+
+# Run the async function
+asyncio.run(generate_video())
+```
+
+### Synchronous Usage
+
+```python
+import seedance
+
+# Sync version
+with seedance.SeedanceClient("sk-video-xxxxx") as client:
+    task = client.generate_video_sync(
+        prompt="A cat playing piano",
+        duration=4,
+        resolution="720p"
+    )
+    
+    result = client.wait_for_completion_sync(task.id)
+    print(f"Video ready: {result.result.video_url}")
+```
+
+## 📖 Documentation
+
+### API Reference
+
+#### SeedanceClient
+
+Main client class for interacting with the Seedance API.
+
+```python
+client = seedance.SeedanceClient(
+    api_key="sk-video-xxxxx",
+    base_url="https://vibegen.art/api/v1",  # Optional
+    timeout=30.0,  # Optional
+    max_retries=3,  # Optional
+    webhook_secret="your-secret"  # Optional for webhooks
+)
+```
+
+#### Generate Video
+
+```python
+# Using GenerationRequest model
+request = seedance.GenerationRequest(
+    prompt="A futuristic city at night",
+    model=seedance.Model.SEEDANCE_2_0,
+    duration=8,
+    resolution=seedance.Resolution.P1080P,
+    generate_audio=True,
+    callback_url="https://your-server.com/webhook"
+)
+
+task = await client.generate_video(request)
+
+# Or using dict
+task = await client.generate_video({
+    "prompt": "A futuristic city at night",
+    "model": "seedance-2.0",
+    "duration": 8,
+    "resolution": "1080p",
+    "generate_audio": True
+})
+```
+
+#### Wait for Completion
+
+```python
+# Simple wait
+result = await client.wait_for_completion(task.id)
+
+# With timeout and progress callback
+def progress_callback(task):
+    print(f"Status: {task.status.value}")
+
+result = await client.wait_for_completion(
+    task.id,
+    timeout=300,  # 5 minutes
+    poll_interval=2.0,  # Poll every 2 seconds
+    on_progress=progress_callback
+)
+```
+
+#### Task Management
+
+```python
+# Get task details
+task = await client.get_task(task_id)
+
+# List tasks with filtering
+tasks = await client.list_tasks(
+    page=1,
+    limit=20,
+    status=seedance.TaskStatus.COMPLETED,
+    model="seedance-2.0"
+)
+
+# Get credits info
+credits = await client.get_credits()
+print(f"Credits remaining: {credits.remaining}")
+```
+
+### Models and Options
+
+#### Available Models
+
+```python
+from seedance import Model
+
+Model.SEEDANCE_2_0    # Seedance 2.0 - 4s/8s/12s, audio supported
+Model.KLING_V2_6      # Kling v2.6 - 5s/10s, image-to-video
+Model.SORA_2          # Sora 2 - 10s only, text-to-video
+```
+
+#### Resolutions
+
+```python
+from seedance import Resolution
+
+Resolution.P480P   # 480p
+Resolution.P720P   # 720p  
+Resolution.P1080P  # 1080p
+```
+
+#### Durations (Model-specific)
+
+```python
+# Seedance 2.0: 4, 8, 12 seconds
+# Kling v2.6: 5, 10 seconds  
+# Sora 2: 10 seconds only
+```
+
+### Image-to-Video
+
+```python
+task = await client.generate_video(
+    prompt="The person slowly turns and smiles",
+    image_urls=["https://example.com/portrait.jpg"],
+    model=seedance.Model.KLING_V2_6,
+    duration=5
+)
+```
+
+### Batch Processing
+
+```python
+async def batch_generate():
+    prompts = [
+        "A cat playing piano",
+        "A dog surfing", 
+        "A robot cooking"
+    ]
+    
+    # Submit all tasks
+    tasks = []
+    for prompt in prompts:
+        task = await client.generate_video(prompt=prompt, duration=4)
+        tasks.append(task)
+    
+    # Wait for all to complete
+    results = []
+    for task in tasks:
+        result = await client.wait_for_completion(task.id)
+        results.append(result)
+    
+    return results
+```
+
+### Webhooks
+
+#### Setup Webhook Handler
+
+```python
+from seedance import WebhookHandler
+
+handler = seedance.WebhookHandler("your-webhook-secret")
+
+@handler.on_task_completed
+async def handle_completed(task):
+    print(f"Video ready: {task.result.video_url}")
+    # Update database, send notification, etc.
+
+@handler.on_task_failed
+async def handle_failed(task):
+    print(f"Task failed: {task.error}")
+    # Log error, notify support, etc.
+```
+
+#### Webhook Server (Development)
+
+```python
+from seedance import create_webhook_server
+
+# Create webhook server with default handlers
+server = create_webhook_server("your-webhook-secret")
+
+# Add custom handlers
+@server.handler.on_task_completed
+def custom_handler(task):
+    print(f"Custom: {task.result.video_url}")
+
+# Run server (for development)
+server.run(host="localhost", port=8000)
+```
+
+#### Verify Webhook Signatures
+
+```python
+# In your webhook endpoint
+payload = await request.body()
+signature = request.headers.get("X-Seedance-Signature")
+
+try:
+    webhook_payload = await client.parse_webhook_payload(payload, signature)
+    print(f"Webhook verified: {webhook_payload.event}")
+except seedance.WebhookSignatureError:
+    return "Invalid signature", 401
+```
+
+### Error Handling
+
+```python
+from seedance import (
+    SeedanceError,
+    TaskTimeoutError,
+    InsufficientCreditsError,
+    RateLimitError
+)
+
+try:
+    result = await client.wait_for_completion(task.id, timeout=60)
+except TaskTimeoutError:
+    print("Task took too long")
+except InsufficientCreditsError as e:
+    print(f"Not enough credits. Need: {e.credits_needed}")
+except RateLimitError as e:
+    print(f"Rate limited. Retry after: {e.retry_after}s")
+except SeedanceError as e:
+    print(f"Seedance error: {e.message}")
+```
+
+### Cost Estimation
+
+```python
+from seedance import calculate_estimated_cost
+
+# Estimate cost before generation
+credits = calculate_estimated_cost(
+    model="seedance-2.0",
+    duration=8,
+    resolution="1080p",
+    with_audio=True
+)
+
+print(f"Estimated cost: {credits} credits")
+```
+
+## 🛠️ Examples
+
+Check out the [examples directory](examples/) for complete working examples:
+
+- [Basic Usage](examples/basic_usage.py) - Async, sync, batch processing
+- [Webhook Handling](examples/webhook_example.py) - Webhook server and integration
+- [Error Handling](examples/error_handling.py) - Comprehensive error handling
+- [Advanced Usage](examples/advanced_usage.py) - Custom retry logic, progress tracking
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+export SEEDANCE_API_KEY="sk-video-xxxxx"
+export SEEDANCE_WEBHOOK_SECRET="your-webhook-secret"
+```
+
+### Client Options
+
+```python
+client = seedance.SeedanceClient(
+    api_key="sk-video-xxxxx",
+    base_url="https://vibegen.art/api/v1",  # Custom base URL
+    timeout=30.0,  # Request timeout in seconds
+    max_retries=3,  # Max retry attempts
+    webhook_secret="secret"  # For webhook verification
+)
+```
+
+## 📊 Pricing
+
+Credit costs vary by model, resolution, duration, and audio:
+
+| Model | Resolution | Duration | No Audio | With Audio |
+|-------|-----------|----------|----------|------------|
+| Seedance 2.0 | 1080p | 4s | 50 | 90 |
+| Seedance 2.0 | 1080p | 8s | 100 | 180 |
+| Seedance 2.0 | 1080p | 12s | 150 | 270 |
+| Kling v2.6 | 1080p | 5s | 150 | 150 |
+| Kling v2.6 | 1080p | 10s | 280 | 280 |
+| Sora 2 | 1080p | 10s | 85 | — |
+
+Use `calculate_estimated_cost()` to get exact costs.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+
+```bash
+# Clone repository
+git clone https://github.com/tc1989tc/seedance-api.git
+cd seedance-api/
+
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run linting
+black seedance/
+isort seedance/
+
+# Type checking
+mypy seedance/
+```
+
+## 📝 Changelog
+
+### v1.0.0 (2025-01-01)
+
+- 🎉 Initial release
+- ✨ Full async/sync API support
+- 🎯 Type hints and Pydantic models
+- 🔔 Webhook support
+- 🛡️ Comprehensive error handling
+- 📊 Cost estimation utilities
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- 📖 [Documentation](https://vibegen.art/docs)
+- 🐛 [Issues](https://github.com/tc1989tc/seedance-api/issues)
+- 💬 [Discord Community](https://discord.gg/seedance)
+- 📧 [Email Support](mailto:support@vibegen.art)
+
+## 🔗 Links
+
+- [Seedance Website](https://vibegen.art)
+- [API Documentation](https://vibegen.art/docs)
+- [Dashboard](https://vibegen.art/dashboard)
+- [GitHub Repository](https://github.com/tc1989tc/seedance-api)
+
+---
+
+Made with ❤️ by the Seedance Team
